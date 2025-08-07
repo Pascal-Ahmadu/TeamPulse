@@ -65,7 +65,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       console.log('✅ Authenticated user on auth page, redirecting to dashboard');
       setIsRedirecting(true);
       router.push('/dashboard');
-    } else if (!isAuth && !isAuthPage && pathname !== '/') {
+    } else if (!isAuth && !isAuthPage) {
       console.log('🔒 Unauthenticated user on protected page, redirecting to login');
       setIsRedirecting(true);
       router.push('/auth/login');
@@ -82,13 +82,21 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [pathname, isRedirecting]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_email');
-    setIsAuthenticated(false);
-    setIsRedirecting(true);
-    router.push('/auth/login');
-  };
+const handleLogout = () => {
+  // Clear localStorage
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('user_email');
+  
+  // Clear cookies (using the same setCookie function from your login page)
+  document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  
+  // Reset all auth state
+  setIsAuthenticated(false);
+  setIsRedirecting(false);
+  
+  // Force full page reload to ensure middleware sees the cleared auth state
+  window.location.href = '/auth/login';
+};
 
   // Show loading during hydration or redirecting
   if (!mounted || isRedirecting) {

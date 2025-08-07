@@ -1,5 +1,19 @@
 'use client';
 
+/**
+ * Login Page Component
+ * 
+ * Provides a professional authentication interface with:
+ * - Form validation
+ * - Loading states
+ * - Error handling
+ * - Cookie-based session management
+ * 
+ * Security Note:
+ * - Client-side authentication is for demonstration only
+ * - Production systems should use server-side auth with secure tokens
+ */
+
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -19,7 +33,12 @@ interface LoginError {
   field?: keyof LoginFormData;
 }
 
-// Cookie helper functions
+/**
+ * Sets browser cookie for authentication
+ * @param name - Cookie name
+ * @param value - Cookie value
+ * @param days - Expiration in days
+ */
 function setCookie(name: string, value: string, days: number = 7) {
   const expires = new Date();
   expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -27,24 +46,27 @@ function setCookie(name: string, value: string, days: number = 7) {
 }
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: '',
-    password: ''
-  });
+  // State management
+  const [formData, setFormData] = useState<LoginFormData>({ email: '', password: '' });
   const [error, setError] = useState<LoginError | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  /**
+   * Handles input changes and clears related errors
+   * @param field - Field to update
+   */
   const handleInputChange = (field: keyof LoginFormData) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    // Clear field-specific errors on input
-    if (error?.field === field) {
-      setError(null);
-    }
+    if (error?.field === field) setError(null);
   };
 
+  /**
+   * Validates form inputs
+   * @returns Validation status
+   */
   const validateForm = (): boolean => {
     if (!formData.email) {
       setError({ message: 'Email is required', field: 'email' });
@@ -64,77 +86,64 @@ export default function LoginPage() {
     return true;
   };
 
+  /**
+   * Handles form submission and authentication
+   * @param e - Form event
+   */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     startTransition(async () => {
       try {
-        // Simulate API delay for better UX
+        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Client-side credential check (for static export compatibility)
+        // Demo credentials (replace with API call in production)
         const DEMO_CREDENTIALS = {
           email: 'admin@teampulse.dev',
           password: 'password123'
         };
         
-        console.log('🔍 Checking credentials:', {
-          inputEmail: formData.email,
-          inputPassword: formData.password,
-          expectedEmail: DEMO_CREDENTIALS.email,
-          expectedPassword: DEMO_CREDENTIALS.password,
-          emailMatch: formData.email.trim().toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase(),
-          passwordMatch: formData.password === DEMO_CREDENTIALS.password
-        });
-        
-        // Trim whitespace and compare (case-sensitive for password, case-insensitive for email)
         const emailMatch = formData.email.trim().toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase();
         const passwordMatch = formData.password === DEMO_CREDENTIALS.password;
         
         if (emailMatch && passwordMatch) {
+          // Set auth tokens
           const token = `token_${Date.now()}`;
-          
-          // Store auth state in both localStorage and cookies
           localStorage.setItem('auth_token', token);
           localStorage.setItem('user_email', formData.email);
-          
-          // Set cookie for middleware (using 'auth_token' to match middleware)
           setCookie('auth_token', token, 7);
           
-          console.log('✅ Login successful, token set in localStorage and cookie');
-          
-          // Force a page reload to ensure middleware picks up the new cookie
+          // Redirect to dashboard
           window.location.href = '/dashboard';
-          
         } else {
-          setError({
-            message: 'Invalid email or password'
-          });
+          setError({ message: 'Invalid email or password' });
         }
-        
       } catch (err) {
-        console.error('💥 Login error:', err);
-        setError({
-          message: err instanceof Error ? err.message : 'An unexpected error occurred'
-        });
+        setError({ message: 'An unexpected error occurred' });
+        console.error('Authentication error:', err);
       }
     });
   };
 
+  /**
+   * Checks if field has validation error
+   * @param field - Field to check
+   * @returns Error status
+   */
   const isFieldError = (field: keyof LoginFormData): boolean => {
     return error?.field === field;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-light">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-md">
-          {/* Login Card */}
+          {/* Authentication Card */}
           <Card className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
             <CardHeader className="space-y-6 pb-6 text-center">
-              {/* Brand Header inside card */}
+              {/* Branding Section */}
               <div>
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
                   <svg
@@ -151,8 +160,8 @@ export default function LoginPage() {
                     />
                   </svg>
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                  <span className="font-bold">TeamPulse</span>
+                <h1 className="text-2xl tracking-tight text-slate-900">
+                  <span className="font-medium">TeamPulse</span>
                 </h1>
                 <p className="mt-2 text-sm text-slate-600">
                   Enterprise Team Sentiment Analytics Platform
@@ -160,7 +169,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <CardTitle className="text-xl font-semibold tracking-tight">
+                <CardTitle className="text-xl tracking-tight font-medium">
                   Welcome back
                 </CardTitle>
                 <CardDescription className="text-slate-600">
@@ -170,13 +179,11 @@ export default function LoginPage() {
             </CardHeader>
             
             <CardContent className="space-y-6">
+              {/* Login Form */}
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label 
-                    htmlFor="email" 
-                    className="text-sm font-medium text-slate-700"
-                  >
+                  <Label htmlFor="email" className="text-sm text-slate-700">
                     Email address
                   </Label>
                   <Input
@@ -200,10 +207,7 @@ export default function LoginPage() {
 
                 {/* Password Field */}
                 <div className="space-y-2">
-                  <Label 
-                    htmlFor="password" 
-                    className="text-sm font-medium text-slate-700"
-                  >
+                  <Label htmlFor="password" className="text-sm text-slate-700">
                     Password
                   </Label>
                   <Input
@@ -241,7 +245,7 @@ export default function LoginPage() {
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <AlertDescription className="text-sm">
+                    <AlertDescription className="text-sm font-medium">
                       {error.message}
                     </AlertDescription>
                   </Alert>
@@ -290,7 +294,7 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {/* Demo Credentials */}
+              {/* Demo Credentials Section */}
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                 <div className="flex items-start space-x-3">
                   <svg

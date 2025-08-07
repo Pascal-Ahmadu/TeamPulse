@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/auth';
+
 import { getTeamById, getMembers } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,7 @@ interface TeamPageProps {
 }
 
 export default async function TeamPage({ params }: TeamPageProps) {
-  await requireAuth();
+
   
   const team = await getTeamById(params.teamId);
   if (!team) {

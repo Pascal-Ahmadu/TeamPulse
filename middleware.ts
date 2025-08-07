@@ -35,6 +35,13 @@ export function middleware(request: NextRequest) {
     console.log('🔒 Redirecting to login:', pathname);
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
+const isLogoutPage = pathname === '/auth/logout'; 
+
+if (isLogoutPage) {
+  const response = NextResponse.redirect(new URL('/auth/login', request.url));
+  response.cookies.delete('auth_token');
+  return response;
+}
 
   // Redirect authenticated users away from auth pages
   if (isLoggedIn && isAuthPage) {

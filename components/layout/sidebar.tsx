@@ -2,13 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   Users, 
   TrendingUp, 
   Settings,
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -41,46 +44,192 @@ interface SidebarProps {
 
 export default function Sidebar({ onLogout }: SidebarProps) {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Handle responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsCollapsed(window.innerWidth < 1024);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Toggle sidebar state
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setIsCollapsed(!isCollapsed);
+    }
+  };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
-      <div className="flex h-16 items-center px-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">TeamPulse</h1>
-      </div>
-      
-      <nav className="flex-1 px-4 py-6 space-y-2">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                'flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-              )}
-            >
-              <Icon className="mr-3 h-5 w-5" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-      
-      <div className="p-4 border-t border-gray-200">
+    <>
+      {/* Mobile Menu Button */}
+      <div className="md:hidden fixed top-4 right-4 z-50">
         <Button
-          variant="ghost"
-          className="w-full justify-start text-gray-700 hover:text-gray-900"
-          onClick={onLogout}
+          variant="outline"
+          size="icon"
+          onClick={toggleSidebar}
+          className="bg-white/80 backdrop-blur-sm border border-blue-200 shadow-md"
         >
-          <LogOut className="mr-3 h-5 w-5" />
-          Logout
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
-    </div>
+
+      {/* Sidebar Container */}
+      <div
+        className={cn(
+          "fixed h-full bg-white/80 backdrop-blur-sm border-0 shadow-xl z-40 transition-all duration-300 ease-in-out",
+          "md:relative md:translate-x-0",
+          isCollapsed ? "w-20" : "w-64",
+          mobileOpen 
+            ? "translate-x-0 w-64" 
+            : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className={cn(
+            "flex h-16 items-center border-b border-blue-100/80 px-4",
+            isCollapsed ? "justify-center" : "px-6"
+          )}>
+            <div className="flex items-center space-x-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg">
+                <svg
+                  className="h-5 w-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+                  />
+                </svg>
+              </div>
+              {!isCollapsed && (
+                <div>
+                  <h1 className="text-xl font-light text-slate-900 tracking-tight">TeamPulse</h1>
+                  <p className="text-xs font-light text-slate-500">Enterprise Analytics</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Navigation */}
+          <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto md:px-4">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'group flex items-center px-3 py-3 text-sm font-light rounded-xl transition-all duration-200',
+                    'md:px-4',
+                    isActive
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                      : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
+                  )}
+                  title={isCollapsed ? item.name : undefined}
+                >
+                  <div className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200',
+                    isActive
+                      ? 'bg-white/20 shadow-sm'
+                      : 'bg-slate-100 group-hover:bg-blue-100',
+                    isCollapsed ? 'mx-auto' : 'mr-3'
+                  )}>
+                    <Icon className={cn(
+                      'h-4 w-4 transition-colors',
+                      isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-600'
+                    )} />
+                  </div>
+                  {!isCollapsed && (
+                    <span className="tracking-tight truncate">{item.name}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+          
+          {/* Collapse Button */}
+          <div className="p-2 border-t border-blue-100/80 hidden md:block">
+            <Button
+              variant="ghost"
+              className={cn(
+                "group w-full justify-start text-slate-700 hover:text-blue-600 hover:bg-blue-50 font-light rounded-xl py-3 h-auto transition-all duration-200",
+                isCollapsed ? "justify-center" : "justify-start"
+              )}
+              onClick={toggleSidebar}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <div className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
+                "bg-slate-100 group-hover:bg-blue-100",
+                isCollapsed ? "mx-auto" : "mr-3"
+              )}>
+                {isCollapsed ? (
+                  <Menu className="h-4 w-4 text-slate-500 group-hover:text-blue-600" />
+                ) : (
+                  <X className="h-4 w-4 text-slate-500 group-hover:text-blue-600" />
+                )}
+              </div>
+              {!isCollapsed && (
+                <span className="tracking-tight">Collapse</span>
+              )}
+            </Button>
+          </div>
+
+          {/* Logout */}
+          <div className="p-2 border-t border-blue-100/80 md:p-4">
+            <Button
+              variant="ghost"
+              className={cn(
+                "group w-full justify-start text-slate-700 hover:text-red-600 hover:bg-red-50 font-light rounded-xl py-3 h-auto transition-all duration-200",
+                isCollapsed ? "justify-center" : "justify-start"
+              )}
+              onClick={onLogout}
+              title={isCollapsed ? "Logout" : undefined}
+            >
+              <div className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-red-100 transition-all duration-200",
+                isCollapsed ? "mx-auto" : "mr-3"
+              )}>
+                <LogOut className="h-4 w-4 text-slate-500 group-hover:text-red-600" />
+              </div>
+              {!isCollapsed && (
+                <span className="tracking-tight">Logout</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+    </>
   );
 }
