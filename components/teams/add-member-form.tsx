@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, CheckCircle, AlertCircle, User, Mail, Heart } from 'lucide-react';
-import { createMember } from '@/lib/data';
+import { addMember } from '@/app/actions';
 import { Sentiment } from '@/types';
 
 interface AddMemberFormProps {
@@ -72,7 +72,7 @@ export default function AddMemberForm({ teamId }: AddMemberFormProps) {
 
     startTransition(async () => {
       try {
-        await createMember({
+        await addMember({
           name: name.trim(),
           email: email.trim(),
           teamId,
@@ -89,8 +89,7 @@ export default function AddMemberForm({ teamId }: AddMemberFormProps) {
         // Show success message briefly then refresh
         setTimeout(() => {
           setSuccess(false);
-          router.refresh();
-        }, 1500);
+        }, 3000);
         
       } catch (error) {
         console.error('Error creating member:', error);
@@ -138,7 +137,7 @@ export default function AddMemberForm({ teamId }: AddMemberFormProps) {
         <Alert className="border-green-200 bg-green-50 text-green-800">
           <CheckCircle className="h-4 w-4" />
           <AlertDescription className="font-medium">
-            Team member added successfully! Refreshing...
+            Team member added successfully!
           </AlertDescription>
         </Alert>
       )}

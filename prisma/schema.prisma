@@ -8,9 +8,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Sentiment {
+  HAPPY
+  NEUTRAL
+  SAD
+}
+
 model Team {
   id        String   @id @default(cuid())
   name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  members   Member[]
+
+  @@map("teams")
+}
+
+model Member {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  sentiment Sentiment @default(NEUTRAL)
+  teamId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([email, teamId]) 
+  @@map("members")
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("settings")
 }
