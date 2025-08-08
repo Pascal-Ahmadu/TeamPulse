@@ -1,4 +1,3 @@
-// components/ui/badge.tsx
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -11,14 +10,14 @@ const badgeVariants = {
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: keyof typeof badgeVariants;
-  children?: React.ReactNode; // ✅ allow children
+  children?: React.ReactNode;
 }
 
 const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
   ({ className, variant = 'default', children, ...props }, ref) => {
     return (
       <div ref={ref} className={cn(badgeVariants[variant], className)} {...props}>
-        {children} {/* ✅ render children */}
+        {children}
       </div>
     );
   }

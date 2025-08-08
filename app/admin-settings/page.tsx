@@ -7,7 +7,8 @@ import AdminSettingsForm from '@/components/admin/admin-settings-form';
 export default async function AdminSettingsPage() {
   const settings = await getSettings();
 
-  const settingsMap = settings.reduce((acc, setting) => {
+  // Added null/undefined check for safety
+  const settingsMap = (settings || []).reduce((acc, setting) => {
     acc[setting.key] = setting.value;
     return acc;
   }, {} as Record<string, string>);
@@ -66,6 +67,7 @@ export default async function AdminSettingsPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="font-light">Changes take effect immediately</span>
+                  {/* Fixed syntax: removed extra double quote */}
                   <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-light">
                     Admin
                   </Badge>
