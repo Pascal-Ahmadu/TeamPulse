@@ -117,13 +117,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-light">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-md">
-          {/* Debug Panel */}
-          <div className="mb-4 p-4 bg-gray-100 rounded-lg text-xs font-mono">
-            <h3 className="font-bold mb-2">Debug Info:</h3>
-            <div>Cookies: {typeof window !== 'undefined' ? document.cookie || 'none' : 'server-side'}</div>
-            <div>Form State: {JSON.stringify(state)}</div>
-            <div>Is Submitting: {isSubmitting ? 'yes' : 'no'}</div>
-          </div>
+         
 
           {/* Authentication Card */}
           <Card className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
