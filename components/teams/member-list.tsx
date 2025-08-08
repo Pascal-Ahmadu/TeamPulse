@@ -485,37 +485,34 @@ export default function MemberList({ teamId, initialMembers, initialTotal = 0 }:
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let page;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        disabled={isSearching}
-                        className={`h-8 w-8 p-0 font-extralight ${
-                          currentPage === page 
-                            ? "bg-blue-600 hover:bg-blue-700" 
-                            : "border-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-                </div>
+               <div className="flex items-center gap-1">
+  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+    const page: number = (() => {
+      if (totalPages <= 5) return i + 1;
+      if (currentPage <= 3) return i + 1;
+      if (currentPage >= totalPages - 2) return totalPages - 4 + i;
+      return currentPage - 2 + i;
+    })();
+
+    return (
+      <Button
+        key={page}
+        variant={currentPage === page ? "default" : "outline"}
+        size="sm"
+        onClick={() => handlePageChange(page)}
+        disabled={isSearching}
+        className={`h-8 w-8 p-0 font-extralight ${
+          currentPage === page
+            ? "bg-blue-600 hover:bg-blue-700"
+            : "border-slate-200 hover:bg-slate-50"
+        }`}
+      >
+        {page}
+      </Button>
+    );
+  })}
+</div>
+
                 
                 <Button
                   variant="outline"
