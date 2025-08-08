@@ -68,18 +68,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   // Handle redirects
   useEffect(() => {
-    if (!isInitialized) return;
-    const isAuthPage =
-      pathname === '/' ||
-      pathname === '/login' ||
-      pathname.startsWith('/auth');
+  if (!isInitialized) return;
 
-    if (isAuthenticated && isAuthPage) {
-      router.push('/dashboard');
-    } else if (!isAuthenticated && !isAuthPage) {
-      router.push('/auth/login');
-    }
-  }, [isAuthenticated, pathname, isInitialized, router]);
+  if (pathname === '/') {
+    router.replace('/auth/login');
+  }
+}, [pathname, isInitialized, router]);
+
 
   const handleLogout = useCallback(async () => {
     try {
