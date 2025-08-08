@@ -1,31 +1,35 @@
-// components/ui/badge.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-
-const badgeVariants = {
-  default: 'inline-flex items-center rounded-full border border-transparent bg-primary text-primary-foreground px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-primary/80',
-  secondary: 'inline-flex items-center rounded-full border border-transparent bg-secondary text-secondary-foreground px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-secondary/80',
-  destructive: 'inline-flex items-center rounded-full border border-transparent bg-destructive text-destructive-foreground px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-destructive/80',
-  outline: 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-foreground',
-};
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cn } from "@/lib/utils";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: keyof typeof badgeVariants;
+  variant?: "default" | "outline";
+  asChild?: boolean;
 }
 
-// Use PropsWithChildren so `children` is typed correctly
-const Badge = React.forwardRef<HTMLDivElement, React.PropsWithChildren<BadgeProps>>(
-  ({ className, variant = 'default', children, ...props }, ref) => {
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
+  ({ className, variant = "default", asChild = false, children, ...props }, ref) => {
+    const Comp = asChild ? Slot : "div";
+
     return (
-      <div ref={ref} className={cn(badgeVariants[variant], className)} {...props}>
+      <Comp
+        ref={ref}
+        className={cn(
+          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          variant === "default" && "bg-primary text-primary-foreground hover:bg-primary/80",
+          variant === "outline" && "border-border text-foreground",
+          className
+        )}
+        {...props}
+      >
         {children}
-      </div>
+      </Comp>
     );
   }
 );
 
-Badge.displayName = 'Badge';
+Badge.displayName = "Badge";
 
-export { Badge, badgeVariants };
+export { Badge };
