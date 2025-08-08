@@ -1,25 +1,24 @@
-// /types/index.ts
+// @/types/index.ts
 import {
   Team as PrismaTeam,
   Member as PrismaMember,
   Setting as PrismaSetting,
-  Sentiment as PrismaSentimentEnum,
+  Sentiment as PrismaSentiment
 } from '@prisma/client';
 
-// ✅ Export Sentiment enum & type directly
-export const Sentiment = PrismaSentimentEnum;
-export type Sentiment = PrismaSentimentEnum;
+// Custom types with relationships
+export type Team = PrismaTeam & {
+  members: PrismaMember[];
+};
 
-// ✅ Namespace for grouped imports
+export type Member = PrismaMember;
+export type Setting = PrismaSetting;
+export { PrismaSentiment as Sentiment };
+
+// Optional namespace for grouped exports
 export namespace Types {
-  export const Sentiment = PrismaSentimentEnum;
-  export type Sentiment = PrismaSentimentEnum;
-  export type Team = PrismaTeam;
+  export type Team = PrismaTeam & { members: PrismaMember[] };
   export type Member = PrismaMember;
   export type Setting = PrismaSetting;
-
-  export interface SentimentTrendData {
-    date: string;
-    [teamName: string]: string | number;
-  }
+  export type Sentiment = PrismaSentiment;
 }
