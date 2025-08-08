@@ -55,10 +55,10 @@ export default async function AdminSettingsPage() {
                 </div>
               </div>
               <div className="hidden sm:flex items-center gap-2">
-                <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-xs font-light">
-                  Admin Privileges Required
-                </Badge>
-              </div>
+  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-xs font-light">
+    <div>Admin Privileges Required</div>
+  </Badge>
+</div>
             </div>
           </CardHeader>
           
