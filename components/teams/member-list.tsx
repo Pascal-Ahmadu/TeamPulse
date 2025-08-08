@@ -497,38 +497,73 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let page;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        disabled={isSearching}
-                        className={`h-8 w-8 p-0 font-extralight ${
-                          currentPage === page 
-                            ? "bg-blue-600 hover:bg-blue-700" 
-                            : "border-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-                </div>
-                
+                // Fix for the pagination section in MemberList component
+// Replace lines 500-520 with this corrected version:
+
+<div className="flex items-center gap-1">
+  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+    let page: number; // Add explicit type annotation
+    if (totalPages <= 5) {
+      page = i + 1;
+    } else if (currentPage <= 3) {
+      page = i + 1;
+    } else if (currentPage >= totalPages - 2) {
+      page = totalPages - 4 + i;
+    } else {
+      page = currentPage - 2 + i;
+    }
+    
+    return (
+      <Button
+        key={page}
+        variant={currentPage === page ? "default" : "outline"}
+        size="sm"
+        onClick={() => handlePageChange(page)}
+        disabled={isSearching}
+        className={`h-8 w-8 p-0 font-extralight ${
+          currentPage === page 
+            ? "bg-blue-600 hover:bg-blue-700" 
+            : "border-slate-200 hover:bg-slate-50"
+        }`}
+      >
+        {page}
+      </Button>
+    );
+  })}
+</div>
+
+// Alternative solution - initialize with a default value:
+<div className="flex items-center gap-1">
+  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+    let page = i + 1; // Initialize with default value
+    if (totalPages > 5) {
+      if (currentPage <= 3) {
+        page = i + 1;
+      } else if (currentPage >= totalPages - 2) {
+        page = totalPages - 4 + i;
+      } else {
+        page = currentPage - 2 + i;
+      }
+    }
+    
+    return (
+      <Button
+        key={page}
+        variant={currentPage === page ? "default" : "outline"}
+        size="sm"
+        onClick={() => handlePageChange(page)}
+        disabled={isSearching}
+        className={`h-8 w-8 p-0 font-extralight ${
+          currentPage === page 
+            ? "bg-blue-600 hover:bg-blue-700" 
+            : "border-slate-200 hover:bg-slate-50"
+        }`}
+      >
+        {page}
+      </Button>
+    );
+  })}
+</div>
                 <Button
                   variant="outline"
                   size="sm"
