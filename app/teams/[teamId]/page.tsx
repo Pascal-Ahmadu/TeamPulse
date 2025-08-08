@@ -1,5 +1,7 @@
-// app/teams/[teamId]/page.tsx
-import * as React from 'react';
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import TeamPageClient from '@/components/teams/team-page-client';
+import prisma from '@/lib/prisma';
 
 interface TeamPageProps {
   params: {
@@ -7,28 +9,31 @@ interface TeamPageProps {
   };
 }
 
-// This MUST be the default export - it's your page component
-export default function TeamPage({ params }: TeamPageProps) {
-  const { teamId } = params;
+async function getTeam(teamId: string) {
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Team: {teamId}</h1>
-      
-      {/* Add your team page content here */}
-      <div className="space-y-4">
-        <p className="text-gray-600">Welcome to team {teamId}</p>
-        
-        
-        {/* <Button variant="default" size="default">Team Action</Button> */}
-      </div>
-    </div>
-  );
+  if (!team) {
+    notFound();
+  }
+
+  return team;
 }
 
-// Optional: Add metadata
-export async function generateMetadata({ params }: TeamPageProps) {
-  return {
-    title: `Team ${params.teamId}`,
-  };
+export default async function TeamPage({ params }: TeamPageProps) {
+  const { teamId } = params;
+  const team = await getTeam(teamId);
+
+  return (
+    <div className="container mx-auto py-6">
+      <Suspense fallback={<div>Loading team details...</div>}>
+        <TeamPageClient teamId={team.id} teamName={team.name} />
+      </Suspense>
+    </div>
+  );
 }
