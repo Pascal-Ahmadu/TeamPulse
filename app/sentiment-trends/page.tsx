@@ -171,45 +171,7 @@ function PageHeader({ stats }: { stats: SentimentStats }) {
         </Button>
       </div>
       
-      {/* Page Title Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="space-y-2">
-              <h1 className="text-2xl font-light tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
-                Sentiment Trends
-              </h1>
-              <p className="text-sm font-light text-slate-600 sm:text-base">
-                Analytics & Insights Dashboard
-              </p>
-            </div>
-          </div>
-          
-          {/* Quick Summary Stats */}
-          {stats.totalResponses > 0 && (
-            <div className="flex items-center gap-4 text-sm">
-              <div className="text-center">
-                <p className="text-xl font-light text-slate-900 sm:text-2xl">
-                  {stats.avgSentiment.toFixed(1)}
-                </p>
-                <p className="text-xs font-light text-slate-600 sm:text-sm">Avg Score</p>
-              </div>
-              <div className="h-10 w-px bg-slate-300 sm:h-12" />
-              <div className="text-center">
-                <p className="text-xl font-light text-slate-900 sm:text-2xl">
-                  {stats.activeMembers}
-                </p>
-                <p className="text-xs font-light text-slate-600 sm:text-sm">Members</p>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <p className="mt-4 max-w-3xl text-sm font-light leading-relaxed text-slate-500 sm:text-base">
-          Track how team sentiment evolves over time with comprehensive analytics, real-time insights, 
-          and actionable data to improve organizational health and employee engagement.
-        </p>
-      </div>
+      
     </header>
   );
 }

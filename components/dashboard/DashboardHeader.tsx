@@ -14,7 +14,7 @@ export default function DashboardHeader() {
           <div className="flex items-center space-x-3 sm:space-x-4 mb-3 sm:mb-4">
            
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extralight text-slate-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-2xl font-extralight text-slate-900 tracking-tight">
                 Team Analytics
               </h1>
               <p className="text-xs sm:text-sm font-light text-slate-600 leading-relaxed">

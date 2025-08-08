@@ -33,31 +33,66 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
  * Provides visual feedback while teams are being loaded from the server.
  * Matches the actual team card dimensions for consistent UX.
  */
+// Replace the TeamsGridSkeleton function with:
 function TeamsGridSkeleton(): React.JSX.Element {
   return (
     <div 
-      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+      className="bg-white/80 backdrop-blur-sm shadow-lg rounded-lg overflow-hidden"
       role="status" 
       aria-label="Loading teams"
     >
-      {Array.from({ length: 6 }, (_, i) => (
-        <div key={i} className="border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-lg p-6 animate-pulse">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-8 w-8 bg-slate-200 rounded-lg" />
-            <div className="h-6 w-16 bg-slate-200 rounded-full" />
-          </div>
-          <div className="h-6 w-3/4 bg-slate-200 rounded mb-2" />
-          <div className="h-4 w-full bg-slate-200 rounded mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="h-4 w-20 bg-slate-200 rounded" />
-            <div className="h-4 w-24 bg-slate-200 rounded" />
-          </div>
+      {/* Table Header */}
+      <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+        <div className="grid grid-cols-5 gap-4">
+          <div className="h-4 w-16 bg-slate-300 rounded animate-pulse" />
+          <div className="h-4 w-20 bg-slate-300 rounded animate-pulse" />
+          <div className="h-4 w-18 bg-slate-300 rounded animate-pulse" />
+          <div className="h-4 w-16 bg-slate-300 rounded animate-pulse" />
+          <div className="h-4 w-20 bg-slate-300 rounded animate-pulse" />
         </div>
-      ))}
+      </div>
+
+      {/* Table Body */}
+      <div className="divide-y divide-slate-200">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="px-6 py-4 hover:bg-slate-50/50">
+            <div className="grid grid-cols-5 gap-4 items-center">
+              {/* Team Name & Icon */}
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-slate-200 rounded-lg animate-pulse" />
+                <div className="h-5 w-24 bg-slate-200 rounded animate-pulse" />
+              </div>
+              
+              {/* Description */}
+              <div className="col-span-1">
+                <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+                <div className="h-3 w-3/4 bg-slate-200 rounded animate-pulse mt-1" />
+              </div>
+              
+              {/* Members Count */}
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+                <div className="h-4 w-8 bg-slate-200 rounded animate-pulse" />
+              </div>
+              
+              {/* Status */}
+              <div>
+                <div className="h-6 w-16 bg-slate-200 rounded-full animate-pulse" />
+              </div>
+              
+              {/* Actions */}
+              <div className="flex justify-end gap-2">
+                <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+                <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+                <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
 /**
  * Teams list component with error handling
  * 
@@ -100,10 +135,7 @@ export default function TeamsPage(): React.JSX.Element {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
         {/* Page Header */}
         <PageHeader
-          title="Teams"
-          subtitle="Enterprise Team Management Platform"
-          description="Monitor team sentiment patterns, track organizational health metrics, and manage your teams effectively with our comprehensive platform."
-          icon={Users}
+          
         />
 
         {/* Team Statistics Section */}

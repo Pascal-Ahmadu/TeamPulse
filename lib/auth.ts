@@ -1,7 +1,4 @@
-
-// lib/auth.ts - Clean version without emoji icons
 'use server';
-
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
