@@ -1,10 +1,32 @@
-// app/actions.ts
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createTeam as createTeamDb, createMember as createMemberDb, updateMember as updateMemberDb, deleteMember as deleteMemberDb, deleteTeam as deleteTeamDb } from '@/lib/data';
+import { 
+  createTeam as createTeamDb, 
+  createMember as createMemberDb, 
+  updateMember as updateMemberDb, 
+  deleteMember as deleteMemberDb, 
+  deleteTeam as deleteTeamDb,
+  searchMembers,
+  updateSetting as updateSettingDb
+} from '@/lib/data';
 import { Sentiment } from '@/types';
+
+// Settings Actions
+export async function updateSettings(settingsData: { checkins_enabled: string; checkin_frequency: string }) {
+  try {
+    // Update both settings
+    await updateSettingDb('checkins_enabled', settingsData.checkins_enabled);
+    await updateSettingDb('checkin_frequency', settingsData.checkin_frequency);
+    
+    revalidatePath('/admin-settings');
+    return { success: true };
+  } catch (error) {
+    console.error('Settings Action Error:', error);
+    throw new Error('Failed to update settings');
+  }
+}
 
 // Team Actions
 export async function createTeam(teamName: string) {
@@ -45,11 +67,11 @@ export async function addMember(data: {
     if (!data.name.trim() || data.name.trim().length < 2) {
       throw new Error('Name must be at least 2 characters long');
     }
-    
+        
     if (!data.email.trim()) {
       throw new Error('Email is required');
     }
-    
+        
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(data.email.trim())) {
       throw new Error('Please enter a valid email address');
@@ -64,7 +86,7 @@ export async function addMember(data: {
 
     revalidatePath(`/teams/${data.teamId}`);
     revalidatePath('/teams');
-    
+        
     return { success: true, member };
   } catch (error) {
     console.error('Action Error:', error);
@@ -75,14 +97,14 @@ export async function addMember(data: {
 export async function updateMemberSentiment(memberId: string, sentiment: Sentiment, teamId: string) {
   try {
     const member = await updateMemberDb(memberId, { sentiment });
-    
+        
     if (!member) {
       throw new Error('Member not found');
     }
 
     revalidatePath(`/teams/${teamId}`);
     revalidatePath('/teams');
-    
+        
     return { success: true, member };
   } catch (error) {
     console.error('Action Error:', error);
@@ -102,12 +124,12 @@ export async function updateMemberDetails(
         throw new Error('Name must be at least 2 characters long');
       }
     }
-    
+        
     if (data.email !== undefined) {
       if (!data.email.trim()) {
         throw new Error('Email is required');
       }
-      
+            
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(data.email.trim())) {
         throw new Error('Please enter a valid email address');
@@ -115,14 +137,14 @@ export async function updateMemberDetails(
     }
 
     const member = await updateMemberDb(memberId, data);
-    
+        
     if (!member) {
       throw new Error('Member not found');
     }
 
     revalidatePath(`/teams/${teamId}`);
     revalidatePath('/teams');
-    
+        
     return { success: true, member };
   } catch (error) {
     console.error('Action Error:', error);
@@ -135,10 +157,26 @@ export async function removeMember(memberId: string, teamId: string) {
     await deleteMemberDb(memberId);
     revalidatePath(`/teams/${teamId}`);
     revalidatePath('/teams');
-    
+        
     return { success: true };
   } catch (error) {
     console.error('Action Error:', error);
     throw error;
+  }
+}
+
+// Search Action - This is the new action to fix the Prisma browser issue
+export async function searchMembersAction(
+  teamId: string, 
+  searchTerm: string = '', 
+  page: number = 1, 
+  limit: number = 10
+) {
+  try {
+    const result = await searchMembers(teamId, searchTerm, page, limit);
+    return result;
+  } catch (error) {
+    console.error('Search Action Error:', error);
+    throw new Error('Failed to search members');
   }
 }

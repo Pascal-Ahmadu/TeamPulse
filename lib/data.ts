@@ -13,7 +13,7 @@ export async function getTeams(): Promise<Team[]> {
       },
     });
     
-    return teams.map(team => ({
+    return teams.map((team: any) => ({
       ...team,
       // Ensure members is always an array
       members: team.members || [],
@@ -183,30 +183,35 @@ export async function deleteMember(id: string): Promise<void> {
 // Search members with pagination
 export async function searchMembers(
   teamId: string,
-  searchTerm: string,
+  searchTerm: string = '',
   page: number = 1,
   limit: number = 10
 ): Promise<{ members: Member[]; total: number; totalPages: number }> {
   try {
     const skip = (page - 1) * limit;
     
-    const whereClause = {
+    // Build the where clause conditionally
+    const whereClause: any = {
       teamId,
-      OR: [
+    };
+    
+    // Only add search conditions if there's a search term
+    if (searchTerm && searchTerm.trim()) {
+      whereClause.OR = [
         {
           name: {
-            contains: searchTerm,
+            contains: searchTerm.trim(),
             mode: 'insensitive' as const,
           },
         },
         {
           email: {
-            contains: searchTerm,
+            contains: searchTerm.trim(),
             mode: 'insensitive' as const,
           },
         },
-      ],
-    };
+      ];
+    }
     
     const [members, total] = await Promise.all([
       prisma.member.findMany({
@@ -330,7 +335,7 @@ export async function getSentimentTrends(): Promise<any[]> {
     return dates.map(date => {
       const trendData: any = { date };
       
-      teams.forEach(team => {
+      teams.forEach((team: any) => {
         if (team.members.length === 0) {
           trendData[team.name] = 2;
           return;

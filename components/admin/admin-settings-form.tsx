@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Save, Shield, Bell, Users, Database, RefreshCw } from 'lucide-react';
-import { updateSetting } from '@/lib/data';
+import { Save, Clock, RefreshCw } from 'lucide-react';
+import { updateSettings } from '@/app/actions'; 
 import { toast } from 'sonner';
 
 interface AdminSettingsFormProps {
@@ -16,7 +15,14 @@ interface AdminSettingsFormProps {
 }
 
 export default function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
-  const [settings, setSettings] = useState(initialSettings);
+  // Provide default values for settings
+  const defaultSettings = {
+    checkins_enabled: 'false',
+    checkin_frequency: 'weekly',
+    ...initialSettings
+  };
+  
+  const [settings, setSettings] = useState(defaultSettings);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -24,100 +30,75 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Form submitted with settings:', settings); // Debug log
     setLoading(true);
 
     try {
-      // Update all settings
-      for (const [key, value] of Object.entries(settings)) {
-        await updateSetting(key, value);
-      }
+      // Use the server action to update settings
+      await updateSettings({
+        checkins_enabled: settings.checkins_enabled || 'false',
+        checkin_frequency: settings.checkin_frequency || 'weekly'
+      });
+      
       router.refresh();
-      toast.success('Settings saved successfully', {
-        description: 'All changes have been applied to the system',
+      toast.success('Check-in settings saved successfully', {
+        description: 'Changes have been applied to the system',
       });
     } catch (error) {
       console.error('Error updating settings:', error);
       toast.error('Failed to save settings', {
-        description: 'Please check your changes and try again',
+        description: 'Please try again',
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setSettings(defaultSettings);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Section 1: Notification Settings */}
+      {/* Check-in Settings Section */}
       <div className="border border-slate-200 rounded-xl p-6 bg-white/50 backdrop-blur-sm">
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-            <Bell className="h-5 w-5 text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg">
+            <Clock className="h-5 w-5 text-white" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-800">Notification Settings</h3>
+          <h3 className="text-lg font-light text-slate-800">Check-in Settings</h3>
         </div>
 
         <div className="space-y-6">
-          {/* Email Notifications */}
+          {/* Enable/Disable Check-ins */}
           <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50">
             <div className="space-y-1">
-              <Label htmlFor="notifications" className="text-slate-700">Email Notifications</Label>
-              <p className="text-sm text-slate-500">
-                Send email alerts when team sentiment changes significantly
+              <Label htmlFor="checkins-enabled" className="text-slate-700 font-light">Enable Check-ins</Label>
+              <p className="text-sm text-slate-500 font-light">
+                Allow team members to submit regular check-ins
               </p>
             </div>
             <Switch
-              id="notifications"
-              checked={settings.notification_enabled === 'true'}
-              onCheckedChange={(checked) => handleSetting('notification_enabled', checked.toString())}
-              className="data-[state=checked]:bg-blue-500"
+              id="checkins-enabled"
+              checked={settings.checkins_enabled === 'true'}
+              onCheckedChange={(checked) => handleSetting('checkins_enabled', checked.toString())}
+              className="data-[state=checked]:bg-indigo-500"
             />
           </div>
 
-          {/* Notification Threshold */}
+          {/* Check-in Frequency */}
           <div className="p-4 rounded-lg bg-slate-50">
-            <Label htmlFor="notification-threshold" className="text-slate-700 mb-2 block">
-              Notification Threshold
+            <Label htmlFor="checkin-frequency" className="text-slate-700 mb-2 block font-light">
+              Check-in Frequency
             </Label>
             <Select
-              value={settings.notification_threshold || '0.5'}
-              onValueChange={(value) => handleSetting('notification_threshold', value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select threshold" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0.3">Small Changes (0.3+)</SelectItem>
-                <SelectItem value="0.5">Moderate Changes (0.5+)</SelectItem>
-                <SelectItem value="0.8">Large Changes (0.8+)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-slate-500 mt-2">
-              Minimum sentiment change required to trigger notifications
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 2: Survey Settings */}
-      <div className="border border-slate-200 rounded-xl p-6 bg-white/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
-            <Users className="h-5 w-5 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-800">Survey Settings</h3>
-        </div>
-
-        <div className="space-y-6">
-          {/* Auto Survey Frequency */}
-          <div className="p-4 rounded-lg bg-slate-50">
-            <Label htmlFor="survey-frequency" className="text-slate-700 mb-2 block">
-              Auto Survey Frequency
-            </Label>
-            <Select
-              value={settings.auto_survey_frequency || 'weekly'}
-              onValueChange={(value) => handleSetting('auto_survey_frequency', value)}
+              value={settings.checkin_frequency || 'weekly'}
+              onValueChange={(value) => handleSetting('checkin_frequency', value)}
+              disabled={settings.checkins_enabled !== 'true'}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select frequency" />
@@ -125,87 +106,14 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
               <SelectContent>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="biweekly">Bi-Weekly</SelectItem>
                 <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="disabled">Disabled</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-slate-500 mt-2">
-              How often to automatically survey team members
-            </p>
-          </div>
-
-          {/* Team Size Limit */}
-          <div className="p-4 rounded-lg bg-slate-50">
-            <Label htmlFor="team-size-limit" className="text-slate-700 mb-2 block">
-              Team Size Limit
-            </Label>
-            <Input
-              id="team-size-limit"
-              type="number"
-              min="1"
-              max="1000"
-              value={settings.team_size_limit || '50'}
-              onChange={(e) => handleSetting('team_size_limit', e.target.value)}
-              className="w-[180px]"
-            />
-            <p className="text-sm text-slate-500 mt-2">
-              Maximum number of members allowed per team
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 3: Data Settings */}
-      <div className="border border-slate-200 rounded-xl p-6 bg-white/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
-            <Database className="h-5 w-5 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-800">Data Settings</h3>
-        </div>
-
-        <div className="space-y-6">
-          {/* Data Retention */}
-          <div className="p-4 rounded-lg bg-slate-50">
-            <Label htmlFor="data-retention" className="text-slate-700 mb-2 block">
-              Data Retention (days)
-            </Label>
-            <Input
-              id="data-retention"
-              type="number"
-              min="30"
-              max="3650"
-              value={settings.data_retention || '365'}
-              onChange={(e) => handleSetting('data_retention', e.target.value)}
-              className="w-[180px]"
-            />
-            <p className="text-sm text-slate-500 mt-2">
-              How long to keep historical data (minimum 30 days)
-            </p>
-          </div>
-
-          {/* Data Export */}
-          <div className="p-4 rounded-lg bg-slate-50">
-            <Label htmlFor="data-export" className="text-slate-700 mb-2 block">
-              Auto Export Frequency
-            </Label>
-            <Select
-              value={settings.data_export_frequency || 'monthly'}
-              onValueChange={(value) => handleSetting('data_export_frequency', value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="quarterly">Quarterly</SelectItem>
-                <SelectItem value="disabled">Disabled</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-slate-500 mt-2">
-              How often to automatically backup sentiment data
+            <p className="text-sm text-slate-500 mt-2 font-light">
+              {settings.checkins_enabled !== 'true' 
+                ? 'Enable check-ins to configure frequency'
+                : 'How often team members should check-in'
+              }
             </p>
           </div>
         </div>
@@ -216,8 +124,9 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
         <Button 
           variant="outline" 
           type="button" 
-          onClick={() => router.refresh()}
+          onClick={handleReset}
           disabled={loading}
+          className="font-light"
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Reset
@@ -225,7 +134,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
         <Button 
           type="submit" 
           disabled={loading}
-          className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg"
+          className="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 shadow-lg font-light"
         >
           {loading ? (
             <>
@@ -238,7 +147,7 @@ export default function AdminSettingsForm({ initialSettings }: AdminSettingsForm
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Save All Settings
+              Save Settings
             </>
           )}
         </Button>

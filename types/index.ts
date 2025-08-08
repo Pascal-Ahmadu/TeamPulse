@@ -1,8 +1,12 @@
 export interface Team {
   id: string;
   name: string;
-  members: Member[];
   createdAt: Date;
+  updatedAt: Date;
+  members: Member[];
+  memberCount: number;
+  isActive: boolean;
+  
 }
 
 export interface Member {
