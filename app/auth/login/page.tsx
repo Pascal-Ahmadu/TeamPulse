@@ -1,145 +1,130 @@
 'use client';
 
 /**
- * Login Page Component
- * 
- * Provides a professional authentication interface with:
- * - Form validation
- * - Loading states
- * - Error handling
- * - Cookie-based session management
- * 
- * Security Note:
- * - Client-side authentication is for demonstration only
- * - Production systems should use server-side auth with secure tokens
+ * Debug Login Page Component - Server-Side Authentication
  */
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useFormState } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { loginAction } from '@/lib/auth';
 
-interface LoginFormData {
-  email: string;
-  password: string;
+interface FormError {
+  error?: string;
 }
 
-interface LoginError {
-  message: string;
-  field?: keyof LoginFormData;
-}
-
-/**
- * Sets browser cookie for authentication
- * @param name - Cookie name
- * @param value - Cookie value
- * @param days - Expiration in days
- */
-function setCookie(name: string, value: string, days: number = 7) {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+// Create a separate submit button component to use useFormStatus properly
+function SubmitButton({ isPending }: { isPending: boolean }) {
+  return (
+    <Button
+      type="submit"
+      className={cn(
+        "w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600",
+        "hover:from-blue-700 hover:to-indigo-700",
+        "focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "transition-all duration-200 font-medium"
+      )}
+      disabled={isPending}
+    >
+      {isPending ? (
+        <div className="flex items-center justify-center space-x-2">
+          <svg
+            className="h-4 w-4 animate-spin text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span>Authenticating...</span>
+        </div>
+      ) : (
+        'Sign in to dashboard'
+      )}
+    </Button>
+  );
 }
 
 export default function LoginPage() {
-  // State management
-  const [formData, setFormData] = useState<LoginFormData>({ email: '', password: '' });
-  const [error, setError] = useState<LoginError | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+  // Use server action with state
+  const [state, formAction] = useFormState<FormError, FormData>(
+    loginAction,
+    { error: undefined }
+  );
 
-  /**
-   * Handles input changes and clears related errors
-   * @param field - Field to update
-   */
-  const handleInputChange = (field: keyof LoginFormData) => (
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Debug: Log form state changes
+  useEffect(() => {
+    console.log('🔄 Form state changed:', state);
+  }, [state]);
+
+  // Clear form errors when user starts typing
+  const handleInputChange = (field: 'email' | 'password') => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    if (error?.field === field) setError(null);
   };
 
-  /**
-   * Validates form inputs
-   * @returns Validation status
-   */
-  const validateForm = (): boolean => {
-    if (!formData.email) {
-      setError({ message: 'Email is required', field: 'email' });
-      return false;
-    }
-    
-    if (!formData.email.includes('@')) {
-      setError({ message: 'Please enter a valid email address', field: 'email' });
-      return false;
-    }
-    
-    if (!formData.password) {
-      setError({ message: 'Password is required', field: 'password' });
-      return false;
-    }
-    
-    return true;
-  };
-
-  /**
-   * Handles form submission and authentication
-   * @param e - Form event
-   */
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    startTransition(async () => {
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Demo credentials (replace with API call in production)
-        const DEMO_CREDENTIALS = {
-          email: 'admin@teampulse.dev',
-          password: 'password123'
-        };
-        
-        const emailMatch = formData.email.trim().toLowerCase() === DEMO_CREDENTIALS.email.toLowerCase();
-        const passwordMatch = formData.password === DEMO_CREDENTIALS.password;
-        
-        if (emailMatch && passwordMatch) {
-          // Set auth tokens
-          const token = `token_${Date.now()}`;
-          localStorage.setItem('auth_token', token);
-          localStorage.setItem('user_email', formData.email);
-          setCookie('auth_token', token, 7);
-          
-          // Redirect to dashboard
-          window.location.href = '/dashboard';
-        } else {
-          setError({ message: 'Invalid email or password' });
-        }
-      } catch (err) {
-        setError({ message: 'An unexpected error occurred' });
-        console.error('Authentication error:', err);
-      }
+  // Auto-fill demo credentials
+  const fillDemoCredentials = () => {
+    setFormData({
+      email: 'admin@teampulse.dev',
+      password: 'password123'
     });
   };
 
-  /**
-   * Checks if field has validation error
-   * @param field - Field to check
-   * @returns Error status
-   */
-  const isFieldError = (field: keyof LoginFormData): boolean => {
-    return error?.field === field;
+  // Debug: Enhanced form action wrapper
+  const handleFormAction = async (formData: FormData) => {
+    console.log('🚀 Form submission started');
+    console.log('📝 Form data:', {
+      email: formData.get('email'),
+      password: formData.get('password')
+    });
+    
+    setIsSubmitting(true);
+    
+    try {
+      await formAction(formData);
+      console.log('✅ Form action completed');
+    } catch (error) {
+      console.error('❌ Form action failed:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-light">
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-md">
+          {/* Debug Panel */}
+          <div className="mb-4 p-4 bg-gray-100 rounded-lg text-xs font-mono">
+            <h3 className="font-bold mb-2">Debug Info:</h3>
+            <div>Cookies: {typeof window !== 'undefined' ? document.cookie || 'none' : 'server-side'}</div>
+            <div>Form State: {JSON.stringify(state)}</div>
+            <div>Is Submitting: {isSubmitting ? 'yes' : 'no'}</div>
+          </div>
+
           {/* Authentication Card */}
           <Card className="border-0 bg-white/80 shadow-xl backdrop-blur-sm">
             <CardHeader className="space-y-6 pb-6 text-center">
@@ -179,8 +164,8 @@ export default function LoginPage() {
             </CardHeader>
             
             <CardContent className="space-y-6">
-              {/* Login Form */}
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {/* Login Form - Using Server Action */}
+              <form action={handleFormAction} className="space-y-4">
                 {/* Email Field */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm text-slate-700">
@@ -198,10 +183,9 @@ export default function LoginPage() {
                     className={cn(
                       "h-11 transition-all duration-200",
                       "focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
-                      isFieldError('email') && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      state.error && "border-red-500 focus:border-red-500 focus:ring-red-200"
                     )}
-                    aria-invalid={isFieldError('email')}
-                    disabled={isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -222,15 +206,14 @@ export default function LoginPage() {
                     className={cn(
                       "h-11 transition-all duration-200",
                       "focus:border-blue-500 focus:ring-2 focus:ring-blue-200",
-                      isFieldError('password') && "border-red-500 focus:border-red-500 focus:ring-red-200"
+                      state.error && "border-red-500 focus:border-red-500 focus:ring-red-200"
                     )}
-                    aria-invalid={isFieldError('password')}
-                    disabled={isPending}
+                    disabled={isSubmitting}
                   />
                 </div>
 
                 {/* Error Display */}
-                {error && (
+                {state.error && (
                   <Alert className="border-red-200 bg-red-50 text-red-800">
                     <svg
                       className="h-4 w-4 text-red-600"
@@ -246,52 +229,13 @@ export default function LoginPage() {
                       />
                     </svg>
                     <AlertDescription className="text-sm font-medium">
-                      {error.message}
+                      {state.error}
                     </AlertDescription>
                   </Alert>
                 )}
 
                 {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className={cn(
-                    "w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600",
-                    "hover:from-blue-700 hover:to-indigo-700",
-                    "focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "transition-all duration-200 font-medium"
-                  )}
-                  disabled={isPending}
-                  aria-describedby={error ? "login-error" : undefined}
-                >
-                  {isPending ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <svg
-                        className="h-4 w-4 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      <span>Authenticating...</span>
-                    </div>
-                  ) : (
-                    'Sign in to dashboard'
-                  )}
-                </Button>
+                <SubmitButton isPending={isSubmitting} />
               </form>
 
               {/* Demo Credentials Section */}
@@ -310,7 +254,7 @@ export default function LoginPage() {
                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <div>
+                  <div className="flex-1">
                     <h4 className="text-sm font-medium text-blue-900">
                       Demo Account
                     </h4>
@@ -322,6 +266,16 @@ export default function LoginPage() {
                         <span className="font-medium">Password:</span> password123
                       </div>
                     </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={fillDemoCredentials}
+                      className="mt-3 h-8 text-xs bg-white/50 border-blue-300 text-blue-700 hover:bg-white hover:text-blue-800"
+                      disabled={isSubmitting}
+                    >
+                      Auto-fill credentials
+                    </Button>
                   </div>
                 </div>
               </div>

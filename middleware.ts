@@ -1,19 +1,28 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Keep cookie names in one place so no mismatch happens
+const AUTH_COOKIE_NAME = 'auth_session'; 
+const USER_COOKIE_NAME = 'user_data';
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Check for auth token in cookies - match the cookie name your app uses
-  const authToken = request.cookies.get('auth_token')?.value || request.cookies.get('auth')?.value;
-  
+
+  // ✅ Check for the same cookie name that createSession() sets
+  const authToken =
+    request.cookies.get(AUTH_COOKIE_NAME)?.value ||
+    request.cookies.get('auth')?.value; // fallback if needed
+
   const isLoggedIn = !!authToken;
   const isAuthPage = pathname.startsWith('/auth') || pathname === '/login';
   const isApiRoute = pathname.startsWith('/api');
-  const isPublicFile = pathname.startsWith('/_next') || pathname.includes('.');
+  const isPublicFile =
+    pathname.startsWith('/_next') ||
+    pathname.includes('.') ||
+    pathname.startsWith('/favicon.ico');
   const isRootPage = pathname === '/';
 
-  // Debug logging (remove in production)
+  // Debug logging (only in dev)
   if (process.env.NODE_ENV === 'development' && !isPublicFile) {
     console.log('🛡️ Middleware:', {
       pathname,
@@ -21,27 +30,28 @@ export function middleware(request: NextRequest) {
       isAuthPage,
       isApiRoute,
       hasAuthToken: !!authToken,
-      cookieNames: request.cookies.getAll().map(c => c.name)
+      cookieNames: request.cookies.getAll().map((c) => c.name),
     });
   }
 
-  // Don't process API routes, public files, Next.js internals, or root page
+  // Skip checks for API, public files, Next internals, or root
   if (isApiRoute || isPublicFile || isRootPage) {
     return NextResponse.next();
   }
 
-  // Redirect unauthenticated users to login (except if already on auth pages)
+  // Logout handling
+  if (pathname === '/auth/logout') {
+    const response = NextResponse.redirect(new URL('/auth/login', request.url));
+    response.cookies.delete(AUTH_COOKIE_NAME);
+    response.cookies.delete(USER_COOKIE_NAME);
+    return response;
+  }
+
+  // Redirect unauthenticated users from protected pages
   if (!isLoggedIn && !isAuthPage) {
     console.log('🔒 Redirecting to login:', pathname);
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
-const isLogoutPage = pathname === '/auth/logout'; 
-
-if (isLogoutPage) {
-  const response = NextResponse.redirect(new URL('/auth/login', request.url));
-  response.cookies.delete('auth_token');
-  return response;
-}
 
   // Redirect authenticated users away from auth pages
   if (isLoggedIn && isAuthPage) {
@@ -54,14 +64,6 @@ if (isLogoutPage) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images, etc.)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.svg$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg)$).*)',
   ],
 };

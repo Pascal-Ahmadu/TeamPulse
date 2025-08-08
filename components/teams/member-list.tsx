@@ -254,6 +254,7 @@ export default function MemberList({ teamId, initialMembers, initialTotal = 0 }:
           </div>
         </div>
         
+       
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-extralight">
           {totalMembers} {totalMembers === 1 ? 'Member' : 'Members'}
         </Badge>
@@ -359,7 +360,7 @@ export default function MemberList({ teamId, initialMembers, initialTotal = 0 }:
                       {editingId === member.id ? (
                         <Select
                           value={editForm.sentiment}
-                          onValueChange={(value) => setEditForm({ ...editForm, sentiment: value as Sentiment })}
+                          onValueChange={(value: Sentiment) => setEditForm({ ...editForm, sentiment: value })}
                           disabled={isPending}
                         >
                           <SelectTrigger className="w-[140px] border-slate-200 focus:border-blue-300 font-extralight">

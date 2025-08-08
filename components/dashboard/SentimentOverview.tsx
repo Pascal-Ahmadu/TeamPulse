@@ -37,7 +37,7 @@ export default function SentimentOverview({
                 <span className="text-xs font-light text-slate-500 uppercase tracking-wide">
                   Positive
                 </span>
-                <span className="text-sm font-light text-slate-700">
+                <span className="text-sm font-light text-slate-700 happy-count">
                   {sentimentBreakdown.HAPPY}
                 </span>
               </div>
@@ -54,7 +54,7 @@ export default function SentimentOverview({
                 <span className="text-xs font-light text-slate-500 uppercase tracking-wide">
                   Neutral
                 </span>
-                <span className="text-sm font-light text-slate-700">
+                <span className="text-sm font-light text-slate-700 neutral-count">
                   {sentimentBreakdown.NEUTRAL}
                 </span>
               </div>
@@ -71,7 +71,7 @@ export default function SentimentOverview({
                 <span className="text-xs font-light text-slate-500 uppercase tracking-wide">
                   At Risk
                 </span>
-                <span className="text-sm font-light text-slate-700">
+                <span className="text-sm font-light text-slate-700 sad-count">
                   {sentimentBreakdown.SAD}
                 </span>
               </div>
