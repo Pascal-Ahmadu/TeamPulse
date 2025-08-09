@@ -3,9 +3,13 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import AuthProvider from '@/components/auth/auth-provider';
-// Remove AuthGuard import - not needed with the fixed AuthProvider
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export default function RootLayout({
   children,
@@ -13,10 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={inter.variable}>
+      <body className={`${inter.className} text-sm antialiased`}>
         <AuthProvider>
-          
           {children}
         </AuthProvider>
       </body>

@@ -54,10 +54,20 @@ export default function Sidebar({ onLogout }: SidebarProps) {
   // Handle initial mount
   useEffect(() => {
     setMounted(true);
+    // Check initial screen size
+    const checkMobile = () => {
+      if (typeof window !== 'undefined') {
+        const mobile = window.innerWidth < 768;
+        setIsMobile(mobile);
+      }
+    };
+    checkMobile();
   }, []);
 
   // Handle responsiveness with proper cleanup
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       const shouldCollapse = window.innerWidth < 1024 && window.innerWidth >= 768;
@@ -71,9 +81,6 @@ export default function Sidebar({ onLogout }: SidebarProps) {
       }
     };
 
-    // Set initial state
-    handleResize();
-    
     window.addEventListener('resize', handleResize);
     
     return () => {
@@ -83,19 +90,18 @@ export default function Sidebar({ onLogout }: SidebarProps) {
 
   // Close mobile menu when route changes
   useEffect(() => {
-    if (mobileOpen) {
-      setMobileOpen(false);
-    }
-  }, [pathname, mobileOpen]);
+    setMobileOpen(false);
+  }, [pathname]);
 
   // Handle sidebar toggle with proper state management
   const toggleSidebar = useCallback(() => {
+    console.log('Toggle clicked, isMobile:', isMobile, 'current mobileOpen:', mobileOpen);
     if (isMobile) {
       setMobileOpen(prev => !prev);
     } else {
       setIsCollapsed(prev => !prev);
     }
-  }, [isMobile]);
+  }, [isMobile, mobileOpen]);
 
   // Close mobile menu
   const closeMobileMenu = useCallback(() => {
@@ -107,38 +113,42 @@ export default function Sidebar({ onLogout }: SidebarProps) {
     return null;
   }
 
+  console.log('Render - isMobile:', isMobile, 'mobileOpen:', mobileOpen, 'mounted:', mounted);
+
   return (
     <>
-      {/* Mobile Menu Button */}
-      {isMobile && (
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleSidebar}
-            className="bg-white/90 backdrop-blur-sm border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            {mobileOpen ? (
-              <X className="h-5 w-5 text-slate-600" />
-            ) : (
-              <Menu className="h-5 w-5 text-slate-600" />
-            )}
-          </Button>
-        </div>
-      )}
+      {/* Mobile Menu Button - Always show on mobile */}
+      <div className="md:hidden fixed top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleSidebar}
+          className="bg-white/90 backdrop-blur-sm border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          {mobileOpen ? (
+            <X className="h-5 w-5 text-slate-600" />
+          ) : (
+            <Menu className="h-5 w-5 text-slate-600" />
+          )}
+        </Button>
+      </div>
 
       {/* Sidebar Container */}
       <div
         className={cn(
-          "fixed h-full bg-white/90 backdrop-blur-sm border-r border-blue-100/80 shadow-xl z-40 transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-40 h-full bg-white/90 backdrop-blur-sm border-r border-blue-100/80 shadow-xl transition-all duration-300 ease-in-out",
+          // Mobile - use transform instead of conditional classes
           "md:relative md:translate-x-0",
-          // Desktop width handling
-          !isMobile && (isCollapsed ? "w-20" : "w-64"),
-          // Mobile handling
-          isMobile && (
+          // Mobile width and positioning
+          "w-64",
+          // Mobile show/hide
+          isMobile ? (
             mobileOpen 
-              ? "translate-x-0 w-64" 
-              : "-translate-x-full w-64"
+              ? "translate-x-0" 
+              : "-translate-x-full"
+          ) : (
+            // Desktop width
+            isCollapsed ? "md:w-20" : "md:w-64"
           )
         )}
       >
@@ -166,7 +176,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
               </div>
               {(!isCollapsed || isMobile) && (
                 <div>
-                  <h1 className="text-xl font-semibold text-slate-900 tracking-tight">TeamPulse</h1>
+                  <h1 className="text-lg font-semibold text-slate-900 tracking-tight">TeamPulse</h1>
                   <p className="text-xs font-medium text-slate-500">Enterprise Analytics</p>
                 </div>
               )}
@@ -214,33 +224,31 @@ export default function Sidebar({ onLogout }: SidebarProps) {
           </nav>
           
           {/* Collapse Button - Desktop Only */}
-          {!isMobile && (
-            <div className="p-3 border-t border-blue-100/80">
-              <Button
-                variant="ghost"
-                className={cn(
-                  "group w-full text-slate-700 hover:text-blue-600 hover:bg-blue-50 font-medium rounded-xl py-3 h-auto transition-all duration-200",
-                  isCollapsed ? "justify-center px-2" : "justify-start px-3"
+          <div className="hidden md:block p-3 border-t border-blue-100/80">
+            <Button
+              variant="ghost"
+              className={cn(
+                "group w-full text-slate-700 hover:text-blue-600 hover:bg-blue-50 font-medium rounded-xl py-3 h-auto transition-all duration-200",
+                isCollapsed ? "justify-center px-2" : "justify-start px-3"
+              )}
+              onClick={toggleSidebar}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <div className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-blue-100 transition-all duration-200",
+                isCollapsed ? "mx-auto" : "mr-3"
+              )}>
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-blue-600" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4 text-slate-500 group-hover:text-blue-600" />
                 )}
-                onClick={toggleSidebar}
-                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                <div className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-blue-100 transition-all duration-200",
-                  isCollapsed ? "mx-auto" : "mr-3"
-                )}>
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-blue-600" />
-                  ) : (
-                    <ChevronLeft className="h-4 w-4 text-slate-500 group-hover:text-blue-600" />
-                  )}
-                </div>
-                {!isCollapsed && (
-                  <span className="tracking-tight">Collapse</span>
-                )}
-              </Button>
-            </div>
-          )}
+              </div>
+              {!isCollapsed && (
+                <span className="tracking-tight">Collapse</span>
+              )}
+            </Button>
+          </div>
 
           {/* Logout */}
           <div className="p-3 border-t border-blue-100/80">
@@ -270,7 +278,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
       {/* Mobile Overlay */}
       {isMobile && mobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-30 backdrop-blur-sm md:hidden"
           onClick={closeMobileMenu}
         />
       )}
