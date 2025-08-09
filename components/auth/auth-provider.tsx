@@ -67,13 +67,29 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [pathname, isInitialized]);
 
   // Handle redirects
-  useEffect(() => {
+ useEffect(() => {
   if (!isInitialized) return;
 
+  const isAuthPage = pathname === '/' || pathname === '/login' || pathname.startsWith('/auth');
+
+  // Redirect root to login
   if (pathname === '/') {
     router.replace('/auth/login');
+    return;
   }
-}, [pathname, isInitialized, router]);
+
+  // Redirect authenticated users away from auth pages
+  if (isAuthenticated && isAuthPage) {
+    router.push('/dashboard');
+    return;
+  }
+
+  // Redirect unauthenticated users to login from protected pages
+  if (!isAuthenticated && !isAuthPage) {
+    router.push('/auth/login');
+    return;
+  }
+}, [pathname, isInitialized, isAuthenticated, router]);
 
 
   const handleLogout = useCallback(async () => {
