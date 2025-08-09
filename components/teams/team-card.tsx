@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * Teams Table Component
+ * Teams Table Component with Pagination
  * 
  * A professional table interface for managing teams with inline actions
- * for adding members and viewing detailed analytics.
+ * for adding members and viewing detailed analytics, now with pagination support.
  * 
  * @file /components/teams/teams-table.tsx
  * @author Pascal Ally Ahmadu
- * @version 1.0.2
+ * @version 1.1.0
  */
 
 import Link from 'next/link';
@@ -23,6 +23,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Team } from '@/types';
 import { 
   Users, 
@@ -31,13 +38,19 @@ import {
   ArrowRight, 
   Activity,
   UserPlus,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface TeamsTableProps {
   teams: Team[];
   getTeamSentimentAverage?: (teamId: string) => Promise<number>;
+  itemsPerPage?: number;
+  showPagination?: boolean;
 }
 
 interface TeamRowProps {
@@ -196,7 +209,6 @@ function TeamRow({ team, index, getTeamSentimentAverage }: TeamRowProps) {
       {/* Team Name & Info */}
       <TableCell className="font-light">
         <div className="flex items-center gap-3">
-          
           <div>
             <div className="font-light text-slate-900 group-hover:text-blue-600 transition-colors">
               {team.name}
@@ -294,6 +306,163 @@ function TeamRow({ team, index, getTeamSentimentAverage }: TeamRowProps) {
 }
 
 /**
+ * Pagination component
+ */
+function TablePagination({ 
+  currentPage, 
+  totalPages, 
+  itemsPerPage, 
+  totalItems, 
+  onPageChange, 
+  onItemsPerPageChange 
+}: {
+  currentPage: number;
+  totalPages: number;
+  itemsPerPage: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
+}) {
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  const getVisiblePages = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('ellipsis');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('ellipsis');
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-white/50">
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-light text-slate-700">Show</span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={(value) => onItemsPerPageChange(parseInt(value))}
+          >
+            <SelectTrigger className="w-16 h-8 text-sm font-light">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm font-light text-slate-700">per page</span>
+        </div>
+        
+        <div className="text-sm font-light text-slate-700">
+          Showing {startItem} to {endItem} of {totalItems} teams
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          className="h-8 w-8 p-0 font-light"
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="h-8 w-8 p-0 font-light"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="flex items-center gap-1">
+          {getVisiblePages().map((page, index) => {
+            if (page === 'ellipsis') {
+              return (
+                <span key={`ellipsis-${index}`} className="px-2 text-slate-400 font-light">
+                  ...
+                </span>
+              );
+            }
+            
+            return (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPageChange(page as number)}
+                className={`h-8 w-8 p-0 font-light ${
+                  currentPage === page 
+                    ? "bg-blue-600 text-white hover:bg-blue-700" 
+                    : ""
+                }`}
+              >
+                {page}
+              </Button>
+            );
+          })}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="h-8 w-8 p-0 font-light"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          className="h-8 w-8 p-0 font-light"
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Empty state component for when no teams exist
  */
 function EmptyTeamsTable() {
@@ -323,23 +492,62 @@ function EmptyTeamsTable() {
 }
 
 /**
- * Main Teams Table Component
+ * Main Teams Table Component with Pagination
  * 
- * Displays teams in a professional table format with inline actions.
+ * Displays teams in a professional table format with inline actions and pagination.
  * 
  * Features:
- * - Serial numbers for each row
+ * - Serial numbers for each row (global across pages)
+ * - Configurable pagination with items per page selector
  * - Sortable columns
  * - Inline member management
- * - Responsive kebab menu with actions
  * - Sentiment visualization
  * - Responsive design
  * 
  * @param props Component props
  * @param props.teams Array of teams to display
  * @param props.getTeamSentimentAverage Optional function to get team sentiment average
+ * @param props.itemsPerPage Number of items to show per page (default: 10)
+ * @param props.showPagination Whether to show pagination controls (default: true)
  */
-export function TeamsTable({ teams, getTeamSentimentAverage }: TeamsTableProps) {
+export function TeamsTable({ 
+  teams, 
+  getTeamSentimentAverage, 
+  itemsPerPage = 10,
+  showPagination = true 
+}: TeamsTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(itemsPerPage);
+
+  // Calculate pagination values
+  const totalItems = teams.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  
+  // Get current page teams
+  const currentTeams = useMemo(() => {
+    return teams.slice(startIndex, endIndex);
+  }, [teams, startIndex, endIndex]);
+
+  // Reset to first page when teams change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [teams.length]);
+
+  // Reset to first page when page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+  };
+
   if (teams.length === 0) {
     return <EmptyTeamsTable />;
   }
@@ -349,19 +557,18 @@ export function TeamsTable({ teams, getTeamSentimentAverage }: TeamsTableProps) 
       {/* Table Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-         
           <div>
             <h2 className="text-xl font-light text-slate-900">
               Teams Overview
             </h2>
             <p className="text-sm font-light text-slate-500">
-              Manage {teams.length} {teams.length === 1 ? 'team' : 'teams'} and their members
+              Manage {totalItems} {totalItems === 1 ? 'team' : 'teams'} and their members
             </p>
           </div>
         </div>
         
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-light">
-          {teams.length} {teams.length === 1 ? 'Team' : 'Teams'}
+          {totalItems} {totalItems === 1 ? 'Team' : 'Teams'}
         </Badge>
       </div>
 
@@ -380,16 +587,28 @@ export function TeamsTable({ teams, getTeamSentimentAverage }: TeamsTableProps) 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {teams.map((team, index) => (
+            {currentTeams.map((team, index) => (
               <TeamRow 
                 key={team.id} 
                 team={team} 
-                index={index}
+                index={startIndex + index} // Global index across all pages
                 getTeamSentimentAverage={getTeamSentimentAverage}
               />
             ))}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        {showPagination && totalPages > 1 && (
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={pageSize}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        )}
       </Card>
 
       {/* Quick Stats Footer */}
@@ -410,7 +629,12 @@ export function TeamsTable({ teams, getTeamSentimentAverage }: TeamsTableProps) 
         </div>
         <div className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4" />
-          <span className="font-light">Click any team to view detailed analytics</span>
+          <span className="font-light">
+            {showPagination && totalPages > 1 
+              ? `Page ${currentPage} of ${totalPages} • Click any team to view detailed analytics`
+              : 'Click any team to view detailed analytics'
+            }
+          </span>
         </div>
       </div>
     </div>
@@ -423,38 +647,38 @@ export function TeamsTable({ teams, getTeamSentimentAverage }: TeamsTableProps) 
  * Usage:
  * ```tsx
  * const teams = await getTeams();
- * return <TeamsTable teams={teams} getTeamSentimentAverage={getTeamSentimentAverage} />;
+ * return (
+ *   <TeamsTable 
+ *     teams={teams} 
+ *     getTeamSentimentAverage={getTeamSentimentAverage}
+ *     itemsPerPage={10}
+ *     showPagination={true}
+ *   />
+ * );
  * ```
  * 
- * Changes in v1.0.2:
- * - Added 'use client' directive to make it a Client Component
- * - Added back the kebab dropdown menu with proper event handling
- * - Added loading state for sentiment data
- * - Made getTeamSentimentAverage optional with fallback calculation
- * - Added proper error handling for async operations
- * - Implemented responsive dropdown menu actions
+ * Changes in v1.1.0:
+ * - Added comprehensive pagination functionality
+ * - Added configurable items per page with dropdown selector
+ * - Added navigation controls (first, previous, next, last)
+ * - Added smart page number display with ellipsis
+ * - Added pagination info display
+ * - Serial numbers now maintain global indexing across pages
+ * - Added props to control pagination behavior
+ * - Improved responsive pagination controls
  * 
- * Features:
- * - Professional table layout with hover effects
- * - Serial numbers for easy row identification
- * - Inline "Add Member" buttons for empty teams
- * - Responsive kebab menu with multiple actions
- * - Sentiment visualization with progress bars
- * - Loading states for async data
- * - Click-to-navigate team details
- * - Responsive design that works on all screen sizes
- * - Empty state with call-to-action
- * - Consistent light font weight throughout
+ * Pagination Features:
+ * - Configurable items per page (5, 10, 20, 50, 100)
+ * - Smart page number display with ellipsis for large page counts
+ * - Navigation controls with proper disabled states
+ * - Showing "X to Y of Z items" information
+ * - Global serial numbers across all pages
+ * - Responsive pagination controls
+ * - Auto-reset to page 1 when data changes
  * 
- * Dependencies:
- * - @/components/ui/table - Table components from shadcn/ui
- * - @/components/ui/dropdown-menu - Dropdown menu component
- * - @/types - Team interface
- * 
- * Actions Available:
- * - View team details (click "View Details" button)
- * - Add members (kebab menu or inline button for empty teams)
- * - View analytics (kebab menu)
- * - Manage team (kebab menu)
- * - Create first team (empty state CTA)
+ * Props:
+ * - teams: Team[] - Array of teams to display
+ * - getTeamSentimentAverage?: (teamId: string) => Promise<number> - Optional sentiment function
+ * - itemsPerPage?: number - Items per page (default: 10)
+ * - showPagination?: boolean - Show pagination controls (default: true)
  */

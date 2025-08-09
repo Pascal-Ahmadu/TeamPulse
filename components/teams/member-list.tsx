@@ -12,7 +12,7 @@
  * - Serial number column
  * - Always shows interface even when empty
  * 
- * @version 1.1.0
+ * @version 1.1.1
  * @author Pascal Ally Ahmadu
  * @created 2024-01-15
  * @updated 2025-01-15
@@ -67,7 +67,7 @@ const MEMBERS_PER_PAGE = 10;
  * @param onAddMember - Callback for add member button
  * @returns JSX.Element - Complete member management interface
  */
-export default function MemberList({ teamId, initialMembers = [], initialTotal = 0, onAddMember }: MemberListProps) {
+function MemberList({ teamId, initialMembers = [], initialTotal = 0, onAddMember }: MemberListProps) {
   // State management
   const [members, setMembers] = useState(initialMembers);
   const [searchTerm, setSearchTerm] = useState('');
@@ -159,7 +159,7 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
       try {
         const result = await updateMemberDetails(memberId, editForm, teamId);
         if (result.success) {
-          setMembers(members.map(m => m.id === memberId ? result.member : m));
+          setMembers(members.map((m: Member) => m.id === memberId ? result.member : m));
           setEditingId(null);
           router.refresh();
         }
@@ -188,13 +188,13 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
       startTransition(async () => {
         try {
           await removeMember(memberId, teamId);
-          setMembers(members.filter(m => m.id !== memberId));
-          setTotalMembers(prev => prev - 1);
+          setMembers(members.filter((m: Member) => m.id !== memberId));
+          setTotalMembers((prev: number) => prev - 1);
           router.refresh();
           
           // Navigate to previous page if current page becomes empty
           if (members.length === 1 && currentPage > 1) {
-            setCurrentPage(prev => prev - 1);
+            setCurrentPage((prev: number) => prev - 1);
           }
         } catch (error) {
           console.error('Error deleting member:', error);
@@ -229,6 +229,42 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
    */
   const getSerialNumber = (index: number) => {
     return (currentPage - 1) * MEMBERS_PER_PAGE + index + 1;
+  };
+
+  /**
+   * Generates pagination page numbers with proper logic
+   * @returns Array of page numbers to display
+   */
+  const getPaginationPages = (): number[] => {
+    const maxVisiblePages = 5;
+    const pages: number[] = [];
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than or equal to max visible
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Smart pagination logic
+      if (currentPage <= 3) {
+        // Show first 5 pages when current page is in the beginning
+        for (let i = 1; i <= maxVisiblePages; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        // Show last 5 pages when current page is near the end
+        for (let i = totalPages - maxVisiblePages + 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Show current page with 2 pages on each side
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pages.push(i);
+        }
+      }
+    }
+    
+    return pages;
   };
 
   return (
@@ -318,7 +354,7 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {members.map((member, index) => (
+                {members.map((member: Member, index: number) => (
                   <TableRow 
                     key={member.id} 
                     className="hover:bg-slate-50/50 transition-colors group border-0"
@@ -479,7 +515,7 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
             </Table>
           </div>
 
-          {/* Pagination */}
+          {/* Fixed Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4">
               <div className="text-sm font-extralight text-slate-500">
@@ -497,73 +533,25 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                // Fix for the pagination section in MemberList component
-// Replace lines 500-520 with this corrected version:
-
-<div className="flex items-center gap-1">
-  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-    let page: number; // Add explicit type annotation
-    if (totalPages <= 5) {
-      page = i + 1;
-    } else if (currentPage <= 3) {
-      page = i + 1;
-    } else if (currentPage >= totalPages - 2) {
-      page = totalPages - 4 + i;
-    } else {
-      page = currentPage - 2 + i;
-    }
-    
-    return (
-      <Button
-        key={page}
-        variant={currentPage === page ? "default" : "outline"}
-        size="sm"
-        onClick={() => handlePageChange(page)}
-        disabled={isSearching}
-        className={`h-8 w-8 p-0 font-extralight ${
-          currentPage === page 
-            ? "bg-blue-600 hover:bg-blue-700" 
-            : "border-slate-200 hover:bg-slate-50"
-        }`}
-      >
-        {page}
-      </Button>
-    );
-  })}
-</div>
-
-// Alternative solution - initialize with a default value:
-<div className="flex items-center gap-1">
-  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-    let page = i + 1; // Initialize with default value
-    if (totalPages > 5) {
-      if (currentPage <= 3) {
-        page = i + 1;
-      } else if (currentPage >= totalPages - 2) {
-        page = totalPages - 4 + i;
-      } else {
-        page = currentPage - 2 + i;
-      }
-    }
-    
-    return (
-      <Button
-        key={page}
-        variant={currentPage === page ? "default" : "outline"}
-        size="sm"
-        onClick={() => handlePageChange(page)}
-        disabled={isSearching}
-        className={`h-8 w-8 p-0 font-extralight ${
-          currentPage === page 
-            ? "bg-blue-600 hover:bg-blue-700" 
-            : "border-slate-200 hover:bg-slate-50"
-        }`}
-      >
-        {page}
-      </Button>
-    );
-  })}
-</div>
+                <div className="flex items-center gap-1">
+                  {getPaginationPages().map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      disabled={isSearching}
+                      className={`h-8 w-8 p-0 font-extralight ${
+                        currentPage === page 
+                          ? "bg-blue-600 hover:bg-blue-700" 
+                          : "border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -623,3 +611,6 @@ export default function MemberList({ teamId, initialMembers = [], initialTotal =
     </div>
   );
 }
+
+// Default export
+export default MemberList;
