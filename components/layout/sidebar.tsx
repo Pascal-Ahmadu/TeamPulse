@@ -59,6 +59,10 @@ export default function Sidebar({ onLogout }: SidebarProps) {
       if (typeof window !== 'undefined') {
         const mobile = window.innerWidth < 768;
         setIsMobile(mobile);
+        // Set initial collapse state for desktop
+        if (!mobile && window.innerWidth < 1024) {
+          setIsCollapsed(true);
+        }
       }
     };
     checkMobile();
@@ -93,27 +97,41 @@ export default function Sidebar({ onLogout }: SidebarProps) {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Handle sidebar toggle with proper state management
+  // Handle sidebar toggle with stable function reference
   const toggleSidebar = useCallback(() => {
-    console.log('Toggle clicked, isMobile:', isMobile, 'current mobileOpen:', mobileOpen);
+    console.log('Toggle clicked, isMobile:', isMobile);
     if (isMobile) {
-      setMobileOpen(prev => !prev);
+      setMobileOpen(prev => {
+        console.log('Setting mobileOpen from', prev, 'to', !prev);
+        return !prev;
+      });
     } else {
-      setIsCollapsed(prev => !prev);
+      setIsCollapsed(prev => {
+        console.log('Setting isCollapsed from', prev, 'to', !prev);
+        return !prev;
+      });
     }
-  }, [isMobile, mobileOpen]);
+  }, [isMobile]); // Removed mobileOpen from dependencies
 
   // Close mobile menu
   const closeMobileMenu = useCallback(() => {
     setMobileOpen(false);
   }, []);
 
+  // Handle logout with debouncing
+  const handleLogout = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Logout clicked');
+    onLogout();
+  }, [onLogout]);
+
   // Prevent hydration mismatch
   if (!mounted) {
     return null;
   }
 
-  console.log('Render - isMobile:', isMobile, 'mobileOpen:', mobileOpen, 'mounted:', mounted);
+  console.log('Render - isMobile:', isMobile, 'mobileOpen:', mobileOpen, 'isCollapsed:', isCollapsed);
 
   return (
     <>
@@ -258,7 +276,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                 "group w-full text-slate-700 hover:text-red-600 hover:bg-red-50 font-medium rounded-xl py-3 h-auto transition-all duration-200",
                 (isCollapsed && !isMobile) ? "justify-center px-2" : "justify-start px-3"
               )}
-              onClick={onLogout}
+              onClick={handleLogout}
               title={(isCollapsed && !isMobile) ? "Logout" : undefined}
             >
               <div className={cn(

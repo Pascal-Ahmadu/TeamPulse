@@ -2,7 +2,6 @@
 
 import { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Sidebar from '@/components/layout/sidebar';
 import { logoutAction } from '@/lib/auth';
 
 interface AuthContextType {
@@ -10,6 +9,7 @@ interface AuthContextType {
   userEmail: string | null;
   logout: () => void;
   isInitialized: boolean;
+  isLoggingOut: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,16 +17,19 @@ const AuthContext = createContext<AuthContextType>({
   userEmail: null,
   logout: () => {},
   isInitialized: false,
+  isLoggingOut: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
 
+// Pure Authentication Provider - only handles auth state
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const checkAuthState = useCallback(async () => {
     try {
@@ -51,9 +54,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     })();
   }, [checkAuthState]);
 
-  // Re-check when pathname changes
+  // Re-check auth when pathname changes (optional)
   useEffect(() => {
     if (!isInitialized) return;
+    
+    // Only re-check on certain route changes if needed
     (async () => {
       const wasAuthenticated = isAuthenticated;
       const nowAuthenticated = await checkAuthState();
@@ -64,98 +69,49 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         changed: wasAuthenticated !== nowAuthenticated
       });
     })();
-  }, [pathname, isInitialized]);
-
-  // Handle redirects
- useEffect(() => {
-  if (!isInitialized) return;
-
-  const isAuthPage = pathname === '/' || pathname === '/login' || pathname.startsWith('/auth');
-
-  // Redirect root to login
-  if (pathname === '/') {
-    router.replace('/auth/login');
-    return;
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (isAuthenticated && isAuthPage) {
-    router.push('/dashboard');
-    return;
-  }
-
-  // Redirect unauthenticated users to login from protected pages
-  if (!isAuthenticated && !isAuthPage) {
-    router.push('/auth/login');
-    return;
-  }
-}, [pathname, isInitialized, isAuthenticated, router]);
-
+  }, [pathname, isInitialized, checkAuthState]); // Removed isAuthenticated dependency
 
   const handleLogout = useCallback(async () => {
     try {
+      console.log('🚪 Starting logout process...');
+      
+      // Set logging out state
+      setIsLoggingOut(true);
+      
+      // Immediately update state to show we're logging out
       setIsAuthenticated(false);
       setUserEmail(null);
+      
+      // Call the logout action
       await logoutAction();
-      router.push('/auth/login');
+      
+      console.log('✅ Logout successful, redirecting...');
+      
+      // Force navigation to login
+      router.replace('/auth/login');
     } catch (error) {
       console.error('❌ Logout error:', error);
-      router.push('/auth/login');
+      
+      // Even if logout action fails, clear state and redirect
+      setIsAuthenticated(false);
+      setUserEmail(null);
+      router.replace('/auth/login');
+    } finally {
+      setIsLoggingOut(false);
     }
   }, [router]);
-
-  if (!isInitialized) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="text-gray-600">Initializing authentication...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const isAuthPage =
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname.startsWith('/auth');
 
   const contextValue = {
     isAuthenticated,
     userEmail,
     logout: handleLogout,
-    isInitialized
+    isInitialized,
+    isLoggingOut
   };
-
-  if (isAuthPage) {
-    return (
-      <AuthContext.Provider value={contextValue}>
-        {children}
-      </AuthContext.Provider>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <AuthContext.Provider value={contextValue}>
-        <div className="flex h-screen items-center justify-center bg-gray-50">
-          <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-600">Redirecting to login...</span>
-          </div>
-        </div>
-      </AuthContext.Provider>
-    );
-  }
 
   return (
     <AuthContext.Provider value={contextValue}>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar onLogout={handleLogout} />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
+      {children}
     </AuthContext.Provider>
   );
 }

@@ -1,18 +1,14 @@
-'use client';
+"use client";
 
-/**
- * Debug Login Page Component - Server-Side Authentication
- */
-
-import React, { useState, useEffect } from 'react';
-import { useFormState } from 'react-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
-import { loginAction } from '@/lib/auth';
+import React, { useState, useEffect } from "react";
+import { useFormState } from "react-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
+import { loginAction } from "@/lib/auth";
 
 interface FormError {
   error?: string;

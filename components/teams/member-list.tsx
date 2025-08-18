@@ -49,7 +49,7 @@ interface MemberListProps {
   teamId: string;
   initialMembers: Member[];
   initialTotal?: number;
-  onAddMember?: () => void; // Add this prop for the add member button
+  onAddMember?: () => void; 
 }
 
 /**

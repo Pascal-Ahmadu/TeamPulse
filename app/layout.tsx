@@ -1,26 +1,25 @@
-'use client';
+import "./globals.css";
+import { Inter } from "next/font/google";
+import AuthProvider from "@/components/auth/auth-provider";
+import AppLayout from "@/components/layout/app-layout";
 
-import './globals.css';
-import { Inter } from 'next/font/google';
-import AuthProvider from '@/components/auth/auth-provider';
-
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-inter',
-  display: 'swap',
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const metadata = {
+  title: "TeamPlus",
+  description: "TeamPlus helps teams collaborate and manage projects efficiently.",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} text-sm antialiased`}>
         <AuthProvider>
-          {children}
+          <AppLayout>{children}</AppLayout>
         </AuthProvider>
       </body>
     </html>
