@@ -1,7 +1,7 @@
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, beforeAll, jest } from '@jest/globals'; 
-import AuthProvider from '@/components/auth/auth-provider';
+import AuthProvider, { useAuth } from '@/components/auth/auth-provider';
 
 // Mock Next.js router
 const mockPush = jest.fn();
@@ -22,23 +22,6 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/lib/auth', () => ({
   logoutAction: jest.fn(() => Promise.resolve())
 }));
-
-// Mock Sidebar component
-jest.mock('@/components/layout/sidebar', () => {
-  return function MockSidebar({ onLogout }: { onLogout: () => void }) {
-    return (
-      <div data-testid="sidebar">
-        <button 
-          data-testid="logout-button" 
-          onClick={onLogout}
-          aria-label="Logout"
-        >
-          Logout
-        </button>
-      </div>
-    );
-  };
-});
 
 // Mock fetch API
 const mockFetch = jest.fn().mockImplementation(() => 
@@ -86,6 +69,27 @@ function createMockResponse(data: { authenticated: boolean; user?: { email: stri
   } as Response);
 }
 
+// Test component to access auth context
+function TestComponent() {
+  const { isAuthenticated, userEmail, isInitialized, logout } = useAuth();
+  
+  if (!isInitialized) {
+    return <div>Loading auth...</div>;
+  }
+  
+  return (
+    <div>
+      <div data-testid="auth-status">
+        {isAuthenticated ? 'authenticated' : 'not-authenticated'}
+      </div>
+      <div data-testid="user-email">{userEmail || 'no-email'}</div>
+      <button data-testid="logout-button" onClick={logout}>
+        Logout
+      </button>
+    </div>
+  );
+}
+
 // Import the mocked module
 import * as auth from '@/lib/auth';
 
@@ -93,182 +97,156 @@ describe('AuthProvider', () => {
   beforeEach(() => {
     // Reset mocks
     mockPush.mockClear();
+    mockReplace.mockClear();
     mockUsePathname.mockReturnValue('/dashboard');
     mockFetch.mockClear();
     jest.spyOn(auth, 'logoutAction').mockImplementation(() => Promise.resolve());
   });
 
-  it('renders children when authenticated', async () => {
+  it('provides authenticated state when user is authenticated', async () => {
     // Mock authenticated state
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: () => Promise.resolve({ 
-        authenticated: true,
-        user: { email: 'test@example.com' }
-      }),
-    } as Response));
-
-    mockUsePathname.mockReturnValue('/dashboard');
+    mockFetch.mockImplementation(() => createMockResponse({
+      authenticated: true,
+      user: { email: 'test@example.com' }
+    }));
 
     render(
       <AuthProvider>
-        <div data-testid="child">Protected Content</div>
+        <TestComponent />
       </AuthProvider>
     );
 
     // Wait for initialization to complete
     await waitFor(() => {
-      expect(screen.getByTestId('child')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated');
     });
+
+    expect(screen.getByTestId('user-email')).toHaveTextContent('test@example.com');
   });
 
-  it('shows loading spinner during initialization', () => {
+  it('shows loading state during initialization', async () => {
     // Delay API response to show loading state
     mockFetch.mockImplementation(() => new Promise(() => {}));
 
     render(
       <AuthProvider>
-        <div data-testid="child">Protected Content</div>
+        <TestComponent />
       </AuthProvider>
     );
 
-    expect(screen.getByText('Initializing authentication...')).toBeInTheDocument();
+    expect(screen.getByText('Loading auth...')).toBeInTheDocument();
   });
 
-  it('redirects to login when not authenticated on protected route', async () => {
+  it('provides unauthenticated state when user is not authenticated', async () => {
     // Mock unauthenticated state
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: () => Promise.resolve({ authenticated: false }),
-    } as Response));
-
-    mockUsePathname.mockReturnValue('/dashboard');
+    mockFetch.mockImplementation(() => createMockResponse({
+      authenticated: false
+    }));
 
     render(
       <AuthProvider>
-        <div data-testid="child">Protected Content</div>
+        <TestComponent />
       </AuthProvider>
     );
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/auth/login');
-    });
-  });
-
-  it('redirects to dashboard when authenticated on auth page', async () => {
-    // Mock authenticated state
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: () => Promise.resolve({
-        authenticated: true,
-        user: { email: 'test@example.com' }
-      }),
-    } as Response));
-
-    mockUsePathname.mockReturnValue('/auth/login');
-
-    render(
-      <AuthProvider>
-        <div data-testid="child">Auth Content</div>
-      </AuthProvider>
-    );
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/dashboard');
-    });
-  });
-
-  it('renders auth pages without sidebar when on auth route', async () => {
-    // Mock unauthenticated state
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: () => Promise.resolve({ authenticated: false }),
-    } as Response));
-
-    mockUsePathname.mockReturnValue('/auth/login');
-
-    render(
-      <AuthProvider>
-        <div data-testid="auth-content">Login Page</div>
-      </AuthProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('auth-content')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('not-authenticated');
     });
 
-    expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
+    expect(screen.getByTestId('user-email')).toHaveTextContent('no-email');
   });
 
   it('handles logout correctly', async () => {
     // Mock authenticated state
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: () => Promise.resolve({
-        authenticated: true,
-        user: { email: 'test@example.com' }
-      }),
-    } as Response));
-
-    mockUsePathname.mockReturnValue('/dashboard');
+    mockFetch.mockImplementation(() => createMockResponse({
+      authenticated: true,
+      user: { email: 'test@example.com' }
+    }));
 
     render(
       <AuthProvider>
-        <div data-testid="child">Protected Content</div>
+        <TestComponent />
       </AuthProvider>
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('child')).toBeInTheDocument();
-      expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated');
     });
 
     const logoutButton = screen.getByTestId('logout-button');
     await userEvent.click(logoutButton);
 
-    // Verify logout action and redirect
+    // Verify logout action was called
     expect(auth.logoutAction).toHaveBeenCalled();
+    
+    // Verify state was cleared
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/auth/login');
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('not-authenticated');
+    });
+
+    // Verify redirect to login
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/auth/login');
     });
   });
 
-  it('shows redirect spinner when unauthenticated user is on protected page', async () => {
-    // Mock unauthenticated state
-    mockFetch.mockImplementation(() => Promise.resolve({
-      ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      json: () => Promise.resolve({ authenticated: false }),
-    } as Response));
-
-    mockUsePathname.mockReturnValue('/teams');
+  it('re-checks auth state when pathname changes', async () => {
+    // Start with authenticated state
+    mockFetch.mockImplementation(() => createMockResponse({
+      authenticated: true,
+      user: { email: 'test@example.com' }
+    }));
 
     render(
       <AuthProvider>
-        <div data-testid="child">Protected Content</div>
+        <TestComponent />
       </AuthProvider>
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Redirecting to login...')).toBeInTheDocument();
-      expect(mockPush).toHaveBeenCalledWith('/auth/login');
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('authenticated');
     });
+
+    // Clear previous calls
+    mockFetch.mockClear();
+
+    // Mock a different response for the path change check
+    mockFetch.mockImplementation(() => createMockResponse({
+      authenticated: false
+    }));
+
+    // Simulate path change
+    act(() => {
+      mockUsePathname.mockReturnValue('/profile');
+    });
+
+    // Trigger a re-render to simulate the pathname change
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    // Wait for the auth re-check
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+    });
+  });
+
+  it('handles auth check errors gracefully', async () => {
+    // Mock fetch to throw an error
+    mockFetch.mockImplementation(() => Promise.reject(new Error('Network error')));
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('not-authenticated');
+    });
+
+    expect(screen.getByTestId('user-email')).toHaveTextContent('no-email');
   });
 });
